@@ -1,4 +1,4 @@
-<![CDATA[# TrustFlow — DeFi Micro-Lending Platform
+# TrustFlow — DeFi Micro-Lending Platform
 
 AI-powered under-collateralized micro-lending. Build your on-chain credit score and access fair loans without traditional credit history. We have made this project for Yantra Central hackathon organized by VIT.
 
@@ -187,4 +187,3 @@ prisma/
 ## 📄 License
 
 This project is licensed under the ISC License.
-]]>
