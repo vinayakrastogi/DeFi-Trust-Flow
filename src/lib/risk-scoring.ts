@@ -382,3 +382,80 @@ export function generateMockRiskData(seed: number = 0): RiskInputData {
         platformTenureDays: random(0, 365),
     };
 }
+
+// ─── AI Risk Assessment (calls Python microservice) ─────────────────────────
+
+export interface AIRiskFactor {
+    feature: string;
+    label: string;
+    impact: number;
+    direction: "positive" | "negative";
+}
+
+export interface AIRiskResult {
+    risk_tier: "Low Risk" | "Moderate Risk" | "High Risk";
+    default_probability: number;
+    confidence: number;
+    score: number; // 0-1000
+    top_factors: AIRiskFactor[];
+    source: "ai" | "fallback";
+}
+
+const RISK_API_URL = process.env.NEXT_PUBLIC_RISK_API_URL || "http://localhost:8000";
+
+/**
+ * Call the AI risk assessment microservice.
+ * Falls back to rule-based scoring if the API is unreachable.
+ */
+export async function calculateAIRiskScore(
+    data: RiskInputData,
+    loanAmount: number = 0,
+    interestRateBps: number = 0,
+    termMonths: number = 6,
+): Promise<AIRiskResult> {
+    try {
+        const response = await fetch(`${RISK_API_URL}/predict`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                walletAgeDays: data.walletAgeDays,
+                txCount: data.txCount,
+                txFrequencyPerMonth: data.txFrequencyPerMonth,
+                portfolioValue: data.portfolioValue,
+                defiProtocolsUsed: data.defiProtocolsUsed,
+                monthlyIncome: data.monthlyIncome,
+                existingDebt: data.existingDebt,
+                debtAmount: data.debtAmount,
+                collateralPercentage: data.collateralPercentage,
+                loanAmount,
+                interestRateBps,
+                termMonths,
+                previousLoansCount: data.previousLoansCount,
+                previousLoansRepaid: data.previousLoansRepaid,
+                previousDefaultCount: data.previousDefaultCount,
+                platformTenureDays: data.platformTenureDays,
+            }),
+        });
+
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+
+        const result = await response.json();
+        return { ...result, source: "ai" as const };
+    } catch {
+        // Fallback to rule-based scoring
+        const fallback = calculateRiskScore(data);
+        const tier = fallback.score >= 700 ? "Low Risk"
+            : fallback.score >= 400 ? "Moderate Risk"
+                : "High Risk";
+
+        return {
+            risk_tier: tier,
+            default_probability: Math.round((1 - fallback.score / 1000) * 10000) / 10000,
+            confidence: 0.5,
+            score: fallback.score,
+            top_factors: [],
+            source: "fallback",
+        };
+    }
+}
+

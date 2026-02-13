@@ -28,7 +28,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "succes
 
 export default function AdminLoansPage() {
     const { address } = useAccount();
-    const { data: ownerAddress } = useContractOwner();
+    const { data: ownerAddress, isLoading: isOwnerLoading } = useContractOwner();
     const { data: loanCountRaw } = useLoanCount();
     const loanCount = loanCountRaw ? Number(loanCountRaw) : 0;
     const { loans, isLoading, refetch } = useGetLoans(0, Math.max(loanCount, 50));
@@ -38,7 +38,16 @@ export default function AdminLoansPage() {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<string>("all");
 
-    const isOwner = address && ownerAddress && address.toLowerCase() === (ownerAddress as string).toLowerCase();
+    // Debugging owner check
+    useEffect(() => {
+        console.log("Admin Check:", {
+            connected: address,
+            owner: ownerAddress,
+            match: address && ownerAddress && address.toLowerCase() === (ownerAddress as string).toLowerCase()
+        });
+    }, [address, ownerAddress]);
+
+    const isOwner = Boolean(address && ownerAddress && address.toLowerCase() === (ownerAddress as string).toLowerCase());
 
     useEffect(() => {
         if (approveSuccess) {
@@ -92,7 +101,7 @@ export default function AdminLoansPage() {
                     <p className="text-muted-foreground">
                         {isOwner
                             ? "Review and manage all on-chain loans (you are the contract owner)."
-                            : "View all loans. Only the contract owner can approve/reject."}
+                            : `View all loans. You are connected as ${address ? shortenAddress(address) : "..."}, but the contract owner is ${ownerAddress ? shortenAddress(ownerAddress as string) : "loading..."}.`}
                     </p>
                 </div>
 

@@ -29,17 +29,30 @@ export interface ContractLoan {
     fundedAt: number;
     monthlyPayment: string;
     monthlyPaymentWei: bigint;
+    platformFee: string;
+    platformFeeWei: bigint;
     fundingProgress: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function parseLoan(raw: readonly [
-    bigint, string, bigint, bigint, bigint, bigint, string,
-    number, bigint, bigint, bigint, bigint, bigint, bigint
-]): ContractLoan {
-    const [id, borrower, amount, interestRate, termMonths, riskScore, purpose,
-        status, totalFunded, totalRepaid, createdAt, fundedAt, monthlyPayment] = raw;
+function parseLoan(raw: any): ContractLoan {
+    let id, borrower, amount, interestRate, termMonths, riskScore, purpose,
+        status, totalFunded, totalRepaid, createdAt, fundedAt, monthlyPayment, platformFee;
+
+    if (Array.isArray(raw)) {
+        [id, borrower, amount, interestRate, termMonths, riskScore, purpose,
+            status, totalFunded, totalRepaid, createdAt, fundedAt, monthlyPayment, platformFee] = raw;
+    } else {
+        // Handle object return (struct)
+        ({
+            id, borrower, amount, interestRate, termMonths, riskScore, purpose,
+            status, totalFunded, totalRepaid, createdAt, fundedAt, monthlyPayment, platformFee
+        } = raw);
+    }
+
+    // Default optional fields
+    platformFee = platformFee ?? 0n;
 
     const amountNum = Number(formatEther(amount));
     const fundedNum = Number(formatEther(totalFunded));
@@ -65,6 +78,8 @@ function parseLoan(raw: readonly [
         monthlyPayment: formatEther(monthlyPayment),
         monthlyPaymentWei: monthlyPayment,
         fundingProgress: amountNum > 0 ? Math.round((fundedNum / amountNum) * 100) : 0,
+        platformFee: formatEther(platformFee),
+        platformFeeWei: platformFee,
     };
 }
 

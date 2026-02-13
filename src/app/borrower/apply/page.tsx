@@ -21,7 +21,12 @@ import {
     AlertCircle, CheckCircle2, Info, Wallet,
 } from "lucide-react";
 import { formatEth } from "@/lib/utils";
-import { calculateInterestRate } from "@/lib/risk-scoring";
+import {
+    calculateInterestRate,
+    calculateAIRiskScore,
+    generateMockRiskData,
+    type AIRiskResult,
+} from "@/lib/risk-scoring";
 import { useCreateLoan } from "@/hooks/useLending";
 
 const loanPurposes = [
@@ -38,13 +43,28 @@ export default function LoanApplicationPage() {
     const [term, setTerm] = useState(6);
     const [purpose, setPurpose] = useState("");
     const [description, setDescription] = useState("");
+    const [aiScore, setAiScore] = useState<number>(720);
+    const [aiTier, setAiTier] = useState<string>("Moderate Risk");
+    const [scoreLoading, setScoreLoading] = useState(false);
 
-    const mockRiskScore = 720;
-    const interestRate = calculateInterestRate(mockRiskScore, term, 0);
+    const interestRate = calculateInterestRate(aiScore, term, 0);
     const interestRateBps = Math.round(interestRate * 100); // e.g. 9.5% → 950 bps
     const totalInterest = amount * (interestRate / 100) * (term / 12);
     const totalPayment = amount + totalInterest;
     const monthlyPayment = totalPayment / term;
+
+    // Fetch AI risk score when amount/term change
+    useEffect(() => {
+        async function fetchScore() {
+            setScoreLoading(true);
+            const mockData = generateMockRiskData(42);
+            const result = await calculateAIRiskScore(mockData, amount, interestRateBps, term);
+            setAiScore(result.score);
+            setAiTier(result.risk_tier);
+            setScoreLoading(false);
+        }
+        fetchScore();
+    }, [amount, term]);
 
     // Redirect on success
     useEffect(() => {
@@ -73,7 +93,7 @@ export default function LoanApplicationPage() {
             amount.toString(),
             interestRateBps,
             term,
-            mockRiskScore,
+            aiScore,
             purpose || "General"
         );
     };
@@ -352,8 +372,9 @@ export default function LoanApplicationPage() {
                                         <div className="pt-2">
                                             <div className="flex items-center gap-2 text-sm">
                                                 <Shield className="h-4 w-4 text-emerald-500" />
-                                                <span className="text-muted-foreground">Risk score:</span>
-                                                <Badge variant="success">{mockRiskScore}</Badge>
+                                                <span className="text-muted-foreground">AI Risk Score:</span>
+                                                <Badge variant="success">{scoreLoading ? "..." : aiScore}</Badge>
+                                                <Badge variant="outline" className="text-xs">{aiTier}</Badge>
                                             </div>
                                         </div>
 

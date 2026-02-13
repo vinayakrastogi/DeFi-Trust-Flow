@@ -39,9 +39,11 @@ export default function MarketplacePage() {
     const [selectedLoan, setSelectedLoan] = useState<ContractLoan | null>(null);
     const [investAmount, setInvestAmount] = useState(0.01);
 
-    // Show only approved loans (ready for funding) that aren't fully funded
+    // Show only approved loans (ready for funding) that aren't fully funded AND not my own loans
     const fundableLoans = allLoans.filter(
-        (l) => (l.status === "approved" || l.status === "funding") && l.fundingProgress < 100
+        (l) => (l.status === "approved" || l.status === "funding")
+            && l.fundingProgress < 100
+            && l.borrower.toLowerCase() !== address?.toLowerCase()
     );
 
     const filteredLoans = fundableLoans

@@ -1,0 +1,31 @@
+{
+  "features": [
+    "AMT_INCOME_TOTAL",
+    "AMT_CREDIT",
+    "AMT_ANNUITY",
+    "AMT_GOODS_PRICE",
+    "DAYS_BIRTH",
+    "DAYS_EMPLOYED",
+    "EXT_SOURCE_1",
+    "EXT_SOURCE_2",
+    "EXT_SOURCE_3",
+    "CREDIT_INCOME_RATIO",
+    "ANNUITY_INCOME_RATIO",
+    "bureau_loan_count",
+    "bureau_active_count",
+    "bureau_max_overdue",
+    "prev_app_count",
+    "prev_approved_count",
+    "prev_refused_count",
+    "avg_payment_diff",
+    "max_dpd",
+    "avg_dpd"
+  ],
+  "thresholds": {
+    "low": 0.15,
+    "moderate": 0.4
+  },
+  "version": "1.0",
+  "dataset": "home-credit-default-risk",
+  "auc_score": 0.7568348224261969
+}
