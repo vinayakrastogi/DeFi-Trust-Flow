@@ -1,0 +1,9 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contract": "TrustFlowLending",
+  "address": "0x5fc5725D3adFbC281bCD387117982eA38581e3D4",
+  "deployer": "0x9b26e5188c9Bf7244Ca1BfeaB6e4D319e730cEEF",
+  "deployedAt": "2026-02-13T05:26:37.207Z",
+  "blockNumber": 10250044
+}

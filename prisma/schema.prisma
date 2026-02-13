@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  walletAddress   String?   @unique
+  email           String?   @unique
+  emailVerified   Boolean   @default(false)
+  passwordHash    String?
+  phone           String?
+  phoneVerified   Boolean   @default(false)
+  role            String    @default("borrower") // borrower, lender, both, admin
+  kycStatus       String    @default("pending")  // pending, approved, rejected
+  riskScore       Int?
+  riskScoreUpdatedAt DateTime?
+  referralCode    String?   @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  profile         Profile?
+  loans           Loan[]           @relation("BorrowerLoans")
+  investments     Investment[]
+  notifications   Notification[]
+  transactions    Transaction[]
+  kycDocuments    KYCDocument[]
+  riskScoreHistory RiskScoreHistory[]
+}
+
+model Profile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  fullName        String?
+  dateOfBirth     String?
+  address         String?
+  employmentStatus String?
+  incomeRange     String?
+  existingDebt    Boolean  @default(false)
+  debtAmount      Float?
+  twitterHandle   String?
+  linkedinUrl     String?
+  profilePictureUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Loan {
+  id              String   @id @default(uuid())
+  loanId          String   @unique // Human-readable ID like LN-ABC123
+  borrowerId      String
+  amount          Float
+  currency        String   @default("USDC")
+  interestRate    Float
+  termMonths      Int
+  purpose         String
+  description     String?
+  collateralAmount Float   @default(0)
+  collateralToken String?
+  riskScore       Int?
+  status          String   @default("pending") // pending, approved, funding, active, repaid, defaulted, rejected
+  totalFunded     Float    @default(0)
+  totalRepaid     Float    @default(0)
+  contractAddress String?
+  fundingDeadline DateTime?
+  firstPaymentDue DateTime?
+  nextPaymentDue  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  borrower        User         @relation("BorrowerLoans", fields: [borrowerId], references: [id])
+  investments     Investment[]
+  repayments      Repayment[]
+  transactions    Transaction[]
+}
+
+model Investment {
+  id              String   @id @default(uuid())
+  loanId          String
+  lenderId        String
+  amount          Float
+  currency        String   @default("USDC")
+  expectedReturn  Float
+  actualReturn    Float    @default(0)
+  status          String   @default("active") // active, completed, defaulted
+  transactionHash String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  loan            Loan     @relation(fields: [loanId], references: [id])
+  lender          User     @relation(fields: [lenderId], references: [id])
+}
+
+model Repayment {
+  id              String   @id @default(uuid())
+  loanId          String
+  amount          Float
+  currency        String   @default("USDC")
+  paymentType     String   @default("scheduled") // scheduled, extra, final
+  transactionHash String?
+  paidAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  loan            Loan     @relation(fields: [loanId], references: [id])
+}
+
+model KYCDocument {
+  id                 String   @id @default(uuid())
+  userId             String
+  documentType       String   // id_front, id_back, selfie, bank_statement, utility_bill
+  fileUrl            String
+  verificationStatus String   @default("pending") // pending, approved, rejected
+  verifiedAt         DateTime?
+  createdAt          DateTime @default(now())
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // payment_reminder, loan_update, risk_change, system
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  userId          String
+  loanId          String?
+  type            String   // deposit, withdrawal, investment, repayment, fee, interest
+  amount          Float
+  currency        String   @default("USDC")
+  status          String   @default("confirmed") // pending, confirmed, failed
+  transactionHash String?
+  description     String?
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id])
+  loan            Loan?    @relation(fields: [loanId], references: [id])
+}
+
+model RiskScoreHistory {
+  id             String   @id @default(uuid())
+  userId         String
+  score          Int
+  scoreBreakdown String   // JSON string of category scores
+  calculatedAt   DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
