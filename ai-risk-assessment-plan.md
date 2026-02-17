@@ -376,10 +376,3 @@ graph TD
     E --> F["6. Risk score passed to<br/>createLoan() on-chain"]
 ```
 
-### Expected Model Performance
-
-| Metric | Target | Notes |
-|--------|--------|-------|
-| AUC-ROC | >0.75 | Home Credit top solutions hit 0.80+ |
-| Inference | <100ms | XGBoost is very fast |
-| Model size | ~2MB | JSON format, easy to deploy |
